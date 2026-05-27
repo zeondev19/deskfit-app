@@ -23,7 +23,7 @@ export default function PlannerWorkspace() {
 
   return (
     <main className="flex min-h-screen flex-col bg-slate-50 text-slate-950">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+      <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -37,11 +37,11 @@ export default function PlannerWorkspace() {
             <p className="text-xs text-slate-500">2D top-view desk setup planning in centimeters</p>
           </div>
         </div>
-        <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <div className="flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1 sm:w-auto">
           <button
             type="button"
             onClick={() => setViewMode("2d")}
-            className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-bold transition ${
+            className={`inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-bold transition sm:flex-none ${
               viewMode === "2d" ? "bg-white text-teal-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
             }`}
           >
@@ -51,7 +51,7 @@ export default function PlannerWorkspace() {
           <button
             type="button"
             onClick={() => setViewMode("3d")}
-            className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-bold transition ${
+            className={`inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-bold transition sm:flex-none ${
               viewMode === "3d" ? "bg-white text-teal-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
             }`}
           >
@@ -61,11 +61,23 @@ export default function PlannerWorkspace() {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-hidden lg:grid lg:grid-cols-[310px_minmax(0,1fr)_330px]">
+      <nav className="sticky top-[105px] z-20 grid grid-cols-3 gap-2 border-b border-slate-200 bg-white/95 p-2 backdrop-blur sm:top-[65px] lg:hidden">
+        {[
+          { href: "#planner-canvas", label: "Canvas" },
+          { href: "#planner-setup", label: "Setup" },
+          { href: "#planner-details", label: "Details" }
+        ].map((item) => (
+          <a key={item.href} href={item.href} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm font-bold text-slate-700">
+            {item.label}
+          </a>
+        ))}
+      </nav>
+
+      <div className="flex flex-1 flex-col overflow-visible lg:grid lg:grid-cols-[310px_minmax(0,1fr)_330px] lg:overflow-hidden">
         <PlannerSidebar />
-        <section className="flex min-h-[620px] min-w-0 flex-1 flex-col overflow-hidden">
+        <section id="planner-canvas" className="order-1 flex min-h-[calc(100svh-165px)] scroll-mt-32 flex-col overflow-hidden lg:order-none lg:min-h-[620px]">
           <ItemToolbar viewMode={viewMode} />
-          <div className="min-h-[520px] flex-1">
+          <div className="h-[72svh] min-h-[520px] flex-1 lg:h-auto">
             {viewMode === "2d" ? <DeskCanvas /> : <Desk3DPreview />}
           </div>
         </section>

@@ -26,7 +26,7 @@ export default function PlannerSidebar() {
   const resetSetup = usePlannerStore((state) => state.resetSetup);
 
   return (
-    <aside className="thin-scrollbar flex h-full flex-col gap-4 overflow-y-auto border-r border-slate-200 bg-white/80 p-4 backdrop-blur lg:w-[310px] lg:shrink-0">
+    <aside id="planner-setup" className="thin-scrollbar order-2 flex h-auto scroll-mt-32 flex-col gap-4 overflow-visible border-b border-slate-200 bg-white/80 p-4 backdrop-blur lg:order-none lg:h-full lg:w-[310px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <Ruler size={18} className="text-teal-700" aria-hidden />

@@ -11,7 +11,7 @@ export default function ItemPropertiesPanel() {
   const toggleSelectedLock = usePlannerStore((state) => state.toggleSelectedLock);
 
   return (
-    <aside className="thin-scrollbar flex h-full flex-col gap-4 overflow-y-auto border-l border-slate-200 bg-white/80 p-4 backdrop-blur lg:w-[330px] lg:shrink-0">
+    <aside id="planner-details" className="thin-scrollbar order-3 flex h-auto scroll-mt-32 flex-col gap-4 overflow-visible border-t border-slate-200 bg-white/80 p-4 backdrop-blur lg:order-none lg:h-full lg:w-[330px] lg:shrink-0 lg:overflow-y-auto lg:border-l lg:border-t-0">
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>

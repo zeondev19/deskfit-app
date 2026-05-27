@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Grid, OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { ContactShadows, Environment, Grid, OrbitControls, PerspectiveCamera, RoundedBox } from "@react-three/drei";
 import { Camera, Download, Info, LocateFixed } from "lucide-react";
 import type { WebGLRenderer } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -28,19 +28,17 @@ type CameraPreset = "iso" | "top" | "front" | "side";
 
 function SelectionBox({ item }: { item: DeskItem }) {
   return (
-    <mesh position={[0, safeHeight(item) / 2 + 0.4, 0]}>
-      <boxGeometry args={[item.widthCm + 2, safeHeight(item) + 1, item.depthCm + 2]} />
+    <RoundedBox args={[item.widthCm + 2, safeHeight(item) + 1, item.depthCm + 2]} radius={1.2} smoothness={4} position={[0, safeHeight(item) / 2 + 0.4, 0]}>
       <meshBasicMaterial color="#14b8a6" wireframe transparent opacity={0.7} />
-    </mesh>
+    </RoundedBox>
   );
 }
 
 function GenericBlock({ item, color = item.color, height = safeHeight(item) }: { item: DeskItem; color?: string; height?: number }) {
   return (
-    <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-      <boxGeometry args={[item.widthCm, height, item.depthCm]} />
-      <meshStandardMaterial color={color} roughness={0.62} metalness={0.08} />
-    </mesh>
+    <RoundedBox args={[item.widthCm, height, item.depthCm]} radius={Math.min(2.2, height * 0.35, item.widthCm * 0.08)} smoothness={5} position={[0, height / 2, 0]} castShadow receiveShadow>
+      <meshStandardMaterial color={color} roughness={0.58} metalness={0.08} />
+    </RoundedBox>
   );
 }
 
@@ -49,22 +47,18 @@ function MonitorModel({ item }: { item: DeskItem }) {
 
   return (
     <group>
-      <mesh position={[0, 1, item.depthCm * 0.2]} castShadow receiveShadow>
-        <boxGeometry args={[item.widthCm * 0.35, 2, item.depthCm * 0.48]} />
-        <meshStandardMaterial color="#334155" roughness={0.5} />
-      </mesh>
-      <mesh position={[0, screenHeight * 0.28, item.depthCm * 0.07]} castShadow>
-        <boxGeometry args={[2.2, screenHeight * 0.48, 2.2]} />
-        <meshStandardMaterial color="#475569" roughness={0.45} />
-      </mesh>
-      <mesh position={[0, screenHeight * 0.64, -item.depthCm * 0.18]} castShadow>
-        <boxGeometry args={[item.widthCm, screenHeight, 2.6]} />
-        <meshStandardMaterial color="#020617" roughness={0.32} metalness={0.18} />
-      </mesh>
-      <mesh position={[0, screenHeight * 0.64, -item.depthCm * 0.195]}>
-        <boxGeometry args={[item.widthCm * 0.88, screenHeight * 0.74, 0.25]} />
-        <meshStandardMaterial color="#0f172a" emissive="#172554" emissiveIntensity={0.12} roughness={0.2} />
-      </mesh>
+      <RoundedBox args={[item.widthCm * 0.38, 2.2, item.depthCm * 0.5]} radius={1.1} smoothness={5} position={[0, 1.1, item.depthCm * 0.2]} castShadow receiveShadow>
+        <meshStandardMaterial color="#334155" roughness={0.45} metalness={0.18} />
+      </RoundedBox>
+      <RoundedBox args={[2.4, screenHeight * 0.48, 2.4]} radius={0.7} smoothness={5} position={[0, screenHeight * 0.28, item.depthCm * 0.07]} castShadow>
+        <meshStandardMaterial color="#475569" roughness={0.42} metalness={0.16} />
+      </RoundedBox>
+      <RoundedBox args={[item.widthCm, screenHeight, 2.8]} radius={2.2} smoothness={6} position={[0, screenHeight * 0.64, -item.depthCm * 0.18]} castShadow>
+        <meshStandardMaterial color="#020617" roughness={0.26} metalness={0.24} />
+      </RoundedBox>
+      <RoundedBox args={[item.widthCm * 0.89, screenHeight * 0.75, 0.32]} radius={1.2} smoothness={5} position={[0, screenHeight * 0.64, -item.depthCm * 0.205]}>
+        <meshStandardMaterial color="#0f172a" emissive="#172554" emissiveIntensity={0.18} roughness={0.18} metalness={0.08} />
+      </RoundedBox>
       <mesh position={[-item.widthCm * 0.25, screenHeight * 0.76, -item.depthCm * 0.35]}>
         <boxGeometry args={[item.widthCm * 0.25, 1.2, 0.35]} />
         <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.2} roughness={0.2} />
@@ -72,6 +66,10 @@ function MonitorModel({ item }: { item: DeskItem }) {
       <mesh position={[item.widthCm * 0.18, screenHeight * 0.58, -item.depthCm * 0.35]}>
         <boxGeometry args={[item.widthCm * 0.32, 1, 0.35]} />
         <meshStandardMaterial color="#14b8a6" emissive="#0f766e" emissiveIntensity={0.16} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, screenHeight * 0.24, -item.depthCm * 0.28]} rotation={[0, 0, 0]}>
+        <torusGeometry args={[item.widthCm * 0.1, 0.45, 10, 40]} />
+        <meshStandardMaterial color="#1f2937" roughness={0.42} metalness={0.18} />
       </mesh>
     </group>
   );
@@ -82,10 +80,9 @@ function LaptopModel({ item }: { item: DeskItem }) {
 
   return (
     <group>
-      <mesh position={[0, 0.8, 0]} castShadow receiveShadow>
-        <boxGeometry args={[item.widthCm, 1.6, item.depthCm]} />
-        <meshStandardMaterial color={item.color} roughness={0.35} metalness={0.35} />
-      </mesh>
+      <RoundedBox args={[item.widthCm, 1.6, item.depthCm]} radius={1.4} smoothness={5} position={[0, 0.8, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color={item.color} roughness={0.32} metalness={0.36} />
+      </RoundedBox>
       {Array.from({ length: 9 }).map((_, index) => (
         <mesh key={index} position={[-item.widthCm * 0.33 + index * keySize * 1.25, 1.75, -item.depthCm * 0.08]}>
           <boxGeometry args={[keySize, 0.18, 1.4]} />
@@ -96,14 +93,12 @@ function LaptopModel({ item }: { item: DeskItem }) {
         <boxGeometry args={[item.widthCm * 0.22, 0.2, item.depthCm * 0.18]} />
         <meshStandardMaterial color="#94a3b8" roughness={0.55} />
       </mesh>
-      <mesh position={[0, 9, -item.depthCm * 0.48]} rotation={[toRadians(-18), 0, 0]} castShadow>
-        <boxGeometry args={[item.widthCm, 16, 1.2]} />
-        <meshStandardMaterial color="#111827" roughness={0.3} metalness={0.25} />
-      </mesh>
-      <mesh position={[0, 9, -item.depthCm * 0.53]} rotation={[toRadians(-18), 0, 0]}>
-        <boxGeometry args={[item.widthCm * 0.84, 11, 0.2]} />
-        <meshStandardMaterial color="#1e293b" emissive="#0f766e" emissiveIntensity={0.08} roughness={0.22} />
-      </mesh>
+      <RoundedBox args={[item.widthCm, 16, 1.2]} radius={1.2} smoothness={5} position={[0, 9, -item.depthCm * 0.48]} rotation={[toRadians(-18), 0, 0]} castShadow>
+        <meshStandardMaterial color="#111827" roughness={0.28} metalness={0.28} />
+      </RoundedBox>
+      <RoundedBox args={[item.widthCm * 0.84, 11, 0.22]} radius={0.8} smoothness={5} position={[0, 9, -item.depthCm * 0.53]} rotation={[toRadians(-18), 0, 0]}>
+        <meshStandardMaterial color="#1e293b" emissive="#0f766e" emissiveIntensity={0.12} roughness={0.2} />
+      </RoundedBox>
     </group>
   );
 }
@@ -127,7 +122,7 @@ function KeyboardModel({ item }: { item: DeskItem }) {
               -item.depthCm * 0.29 + row * keyDepth + keyDepth / 2
             ]}
           >
-            <boxGeometry args={[keyWidth * 0.72, 0.28, keyDepth * 0.62]} />
+            <boxGeometry args={[keyWidth * 0.72, 0.32, keyDepth * 0.62]} />
             <meshStandardMaterial color="#cbd5e1" roughness={0.52} />
           </mesh>
         ))
@@ -143,11 +138,12 @@ function KeyboardModel({ item }: { item: DeskItem }) {
 function MousepadModel({ item }: { item: DeskItem }) {
   return (
     <group>
-      <GenericBlock item={item} height={safeHeight(item)} color={item.color} />
-      <mesh position={[0, safeHeight(item) + 0.08, 0]}>
-        <boxGeometry args={[item.widthCm * 0.92, 0.08, item.depthCm * 0.82]} />
+      <RoundedBox args={[item.widthCm, safeHeight(item), item.depthCm]} radius={2.4} smoothness={7} position={[0, safeHeight(item) / 2, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color={item.color} roughness={0.74} />
+      </RoundedBox>
+      <RoundedBox args={[item.widthCm * 0.92, 0.08, item.depthCm * 0.82]} radius={2} smoothness={7} position={[0, safeHeight(item) + 0.08, 0]}>
         <meshStandardMaterial color="#ccfbf1" transparent opacity={0.32} roughness={0.7} />
-      </mesh>
+      </RoundedBox>
     </group>
   );
 }
@@ -195,9 +191,13 @@ function SpeakerPairModel({ item }: { item: DeskItem }) {
             <boxGeometry args={[speakerWidth, safeHeight(item), item.depthCm]} />
             <meshStandardMaterial color={item.color} roughness={0.55} />
           </mesh>
-          <mesh position={[0, safeHeight(item) * 0.56, -item.depthCm / 2 - 0.15]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh position={[0, safeHeight(item) * 0.62, -item.depthCm / 2 - 0.15]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[speakerWidth * 0.22, speakerWidth * 0.22, 0.4, 24]} />
             <meshStandardMaterial color="#111827" roughness={0.35} />
+          </mesh>
+          <mesh position={[0, safeHeight(item) * 0.32, -item.depthCm / 2 - 0.16]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[speakerWidth * 0.13, speakerWidth * 0.13, 0.45, 24]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.35} />
           </mesh>
         </group>
       ))}
@@ -214,6 +214,10 @@ function LampModel({ item }: { item: DeskItem }) {
       </mesh>
       <mesh position={[0, safeHeight(item) * 0.42, 0]} castShadow>
         <cylinderGeometry args={[1.1, 1.1, safeHeight(item) * 0.75, 16]} />
+        <meshStandardMaterial color="#854d0e" roughness={0.4} />
+      </mesh>
+      <mesh position={[item.widthCm * 0.24, safeHeight(item) * 0.74, 0]} rotation={[0, 0, toRadians(38)]} castShadow>
+        <cylinderGeometry args={[0.9, 0.9, item.widthCm * 0.55, 16]} />
         <meshStandardMaterial color="#854d0e" roughness={0.4} />
       </mesh>
       <mesh position={[0, safeHeight(item) * 0.86, 0]} castShadow>
@@ -247,10 +251,9 @@ function HeadphoneStandModel({ item }: { item: DeskItem }) {
 function DeskShelfModel({ item }: { item: DeskItem }) {
   return (
     <group>
-      <mesh position={[0, safeHeight(item), 0]} castShadow receiveShadow>
-        <boxGeometry args={[item.widthCm, 3, item.depthCm]} />
+      <RoundedBox args={[item.widthCm, 3, item.depthCm]} radius={1.4} smoothness={5} position={[0, safeHeight(item), 0]} castShadow receiveShadow>
         <meshStandardMaterial color={item.color} roughness={0.55} />
-      </mesh>
+      </RoundedBox>
       {[-1, 1].map((xSide) =>
         [-1, 1].map((zSide) => (
           <mesh key={`${xSide}-${zSide}`} position={[xSide * item.widthCm * 0.42, safeHeight(item) / 2, zSide * item.depthCm * 0.34]} castShadow>
@@ -309,14 +312,18 @@ function DeskModel({ desk }: { desk: DeskConfig }) {
 
   return (
     <group>
-      <mesh position={[0, 2, 0]} receiveShadow castShadow>
-        <boxGeometry args={[desk.widthCm, 4, desk.depthCm]} />
-        <meshStandardMaterial color={colors.top} roughness={0.58} />
-      </mesh>
-      <mesh position={[0, 4.2, 0]}>
-        <boxGeometry args={[desk.widthCm + 1, 0.5, desk.depthCm + 1]} />
-        <meshStandardMaterial color={colors.edge} roughness={0.5} />
-      </mesh>
+      <RoundedBox args={[desk.widthCm, 4, desk.depthCm]} radius={3.2} smoothness={8} position={[0, 2, 0]} receiveShadow castShadow>
+        <meshStandardMaterial color={colors.top} roughness={0.5} />
+      </RoundedBox>
+      <RoundedBox args={[desk.widthCm + 1, 0.7, desk.depthCm + 1]} radius={3.4} smoothness={8} position={[0, 4.25, 0]}>
+        <meshStandardMaterial color={colors.edge} roughness={0.48} />
+      </RoundedBox>
+      {Array.from({ length: 11 }).map((_, index) => (
+        <mesh key={index} position={[0, 4.64, -desk.depthCm * 0.42 + index * (desk.depthCm * 0.084)]}>
+          <boxGeometry args={[desk.widthCm * 0.92, 0.07, 0.28]} />
+          <meshStandardMaterial color={desk.theme === "white" || desk.theme === "graphite" ? "#ffffff" : "#8b5e34"} transparent opacity={0.22} roughness={0.7} />
+        </mesh>
+      ))}
       {[-1, 1].map((xSide) =>
         [-1, 1].map((zSide) => (
           <mesh key={`${xSide}-${zSide}`} position={[xSide * legX, -18, zSide * legZ]} castShadow>
@@ -343,8 +350,12 @@ function SceneContent() {
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 120, Math.max(150, desk.depthCm * 1.65)]} fov={45} />
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[80, 120, 90]} intensity={1.15} castShadow shadow-mapSize-width={1536} shadow-mapSize-height={1536} />
+      <color attach="background" args={["#eef2f0"]} />
+      <fog attach="fog" args={["#eef2f0", 180, 460]} />
+      <Environment preset="city" />
+      <hemisphereLight intensity={0.65} groundColor="#cbd5e1" color="#ffffff" />
+      <directionalLight position={[80, 140, 90]} intensity={1.25} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+      <pointLight position={[-100, 70, -90]} intensity={0.32} color="#ccfbf1" />
       <group onPointerDown={() => selectItem(null)}>
         <DeskModel desk={desk} />
         {items.map((item) => (
@@ -371,8 +382,9 @@ function SceneContent() {
       />
       <mesh position={[0, -40, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[Math.max(320, desk.widthCm * 2.4), Math.max(240, desk.depthCm * 2.6)]} />
-        <shadowMaterial transparent opacity={0.16} />
+        <meshStandardMaterial color="#e5ebe8" roughness={0.72} />
       </mesh>
+      <ContactShadows position={[0, -37.8, 0]} opacity={0.28} scale={Math.max(260, Math.max(desk.widthCm, desk.depthCm) * 2.2)} blur={2.4} far={65} />
     </>
   );
 }
