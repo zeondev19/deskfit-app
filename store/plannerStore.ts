@@ -27,11 +27,46 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 const snap = (value: number, gridSize: number) => Math.round(value / gridSize) * gridSize;
 
+const HISTORY_LIMIT = 50;
+
+type PlannerHistoryEntry = {
+  desk: DeskConfig;
+  items: DeskItem[];
+  selectedItemId: string | null;
+};
+
+type PlannerStateShape = {
+  desk: DeskConfig;
+  items: DeskItem[];
+  selectedItemId: string | null;
+};
+
+const cloneDesk = (desk: DeskConfig): DeskConfig => ({ ...desk });
+
+const cloneItems = (items: DeskItem[]): DeskItem[] => items.map((item) => ({ ...item }));
+
+const createHistoryEntry = (state: PlannerStateShape): PlannerHistoryEntry => ({
+  desk: cloneDesk(state.desk),
+  items: cloneItems(state.items),
+  selectedItemId: state.selectedItemId
+});
+
+const withHistory = <T extends Partial<PlannerStateShape> & { storageMessage?: string | null }>(
+  state: PlannerStateShape & { historyPast: PlannerHistoryEntry[] },
+  changes: T
+) => ({
+  ...changes,
+  historyPast: [...state.historyPast, createHistoryEntry(state)].slice(-HISTORY_LIMIT),
+  historyFuture: []
+});
+
 type PlannerStore = {
   desk: DeskConfig;
   items: DeskItem[];
   selectedItemId: string | null;
   storageMessage: string | null;
+  historyPast: PlannerHistoryEntry[];
+  historyFuture: PlannerHistoryEntry[];
   canvasExporter: (() => void) | null;
   setDeskSize: (widthCm: number, depthCm: number) => void;
   setDeskTheme: (theme: DeskTheme) => void;
@@ -46,6 +81,8 @@ type PlannerStore = {
   rotateSelected: (delta: number) => void;
   toggleSelectedLock: () => void;
   applyTemplate: (templateId: string) => void;
+  undo: () => void;
+  redo: () => void;
   saveSetup: () => void;
   loadSetup: () => void;
   resetSetup: () => void;
@@ -58,80 +95,100 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
   items: [],
   selectedItemId: null,
   storageMessage: null,
+  historyPast: [],
+  historyFuture: [],
   canvasExporter: null,
 
   setDeskSize: (widthCm, depthCm) =>
-    set((state) => ({
-      desk: {
-        ...state.desk,
-        widthCm: clamp(Math.round(widthCm), 60, 240),
-        depthCm: clamp(Math.round(depthCm), 40, 120)
-      },
-      storageMessage: null
-    })),
+    set((state) =>
+      withHistory(state, {
+        desk: {
+          ...state.desk,
+          widthCm: clamp(Math.round(widthCm), 60, 240),
+          depthCm: clamp(Math.round(depthCm), 40, 120)
+        },
+        storageMessage: null
+      })
+    ),
 
   setDeskTheme: (theme) =>
-    set((state) => ({
-      desk: { ...state.desk, theme },
-      storageMessage: null
-    })),
+    set((state) =>
+      withHistory(state, {
+        desk: { ...state.desk, theme },
+        storageMessage: null
+      })
+    ),
 
   toggleGrid: () =>
-    set((state) => ({
-      desk: { ...state.desk, showGrid: !state.desk.showGrid }
-    })),
+    set((state) =>
+      withHistory(state, {
+        desk: { ...state.desk, showGrid: !state.desk.showGrid },
+        storageMessage: null
+      })
+    ),
 
   toggleSnap: () =>
-    set((state) => ({
-      desk: { ...state.desk, snapToGrid: !state.desk.snapToGrid }
-    })),
+    set((state) =>
+      withHistory(state, {
+        desk: { ...state.desk, snapToGrid: !state.desk.snapToGrid },
+        storageMessage: null
+      })
+    ),
 
   addItem: (type) =>
     set((state) => {
       const offset = (state.items.length % 5) * 4;
       const item = createDeskItem(type, createId(), state.desk.widthCm / 2 + offset, state.desk.depthCm / 2 + offset);
 
-      return {
+      return withHistory(state, {
         items: [...state.items, item],
         selectedItemId: item.id,
         storageMessage: null
-      };
+      });
     }),
 
   selectItem: (itemId) => set({ selectedItemId: itemId }),
 
   updateItem: (itemId, updates) =>
-    set((state) => ({
-      items: state.items.map((item) => {
-        if (item.id !== itemId) return item;
+    set((state) => {
+      if (!state.items.some((item) => item.id === itemId)) return state;
 
-        const x = updates.x ?? item.x;
-        const y = updates.y ?? item.y;
-        const nextX = state.desk.snapToGrid && "x" in updates ? snap(x, state.desk.gridSizeCm) : x;
-        const nextY = state.desk.snapToGrid && "y" in updates ? snap(y, state.desk.gridSizeCm) : y;
+      return withHistory(state, {
+        items: state.items.map((item) => {
+          if (item.id !== itemId) return item;
 
-        return {
-          ...item,
-          ...updates,
-          x: nextX,
-          y: nextY,
-          widthCm: updates.widthCm ? Math.max(4, Math.round(updates.widthCm * 10) / 10) : item.widthCm,
-          depthCm: updates.depthCm ? Math.max(4, Math.round(updates.depthCm * 10) / 10) : item.depthCm,
-          rotation:
-            updates.rotation === undefined
-              ? item.rotation
-              : Math.round((((updates.rotation % 360) + 360) % 360) * 10) / 10
-        };
-      }),
-      storageMessage: null
-    })),
+          const x = updates.x ?? item.x;
+          const y = updates.y ?? item.y;
+          const nextX = state.desk.snapToGrid && "x" in updates ? snap(x, state.desk.gridSizeCm) : x;
+          const nextY = state.desk.snapToGrid && "y" in updates ? snap(y, state.desk.gridSizeCm) : y;
+
+          return {
+            ...item,
+            ...updates,
+            x: nextX,
+            y: nextY,
+            widthCm: updates.widthCm === undefined ? item.widthCm : Math.max(4, Math.round(updates.widthCm * 10) / 10),
+            depthCm: updates.depthCm === undefined ? item.depthCm : Math.max(4, Math.round(updates.depthCm * 10) / 10),
+            rotation:
+              updates.rotation === undefined
+                ? item.rotation
+                : Math.round((((updates.rotation % 360) + 360) % 360) * 10) / 10
+          };
+        }),
+        storageMessage: null
+      });
+    }),
 
   deleteItem: (itemId) =>
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== itemId),
-      selectedItemId: state.selectedItemId === itemId ? null : state.selectedItemId,
-      storageMessage: null
-    })),
+    set((state) => {
+      if (!state.items.some((item) => item.id === itemId)) return state;
+
+      return withHistory(state, {
+        items: state.items.filter((item) => item.id !== itemId),
+        selectedItemId: state.selectedItemId === itemId ? null : state.selectedItemId,
+        storageMessage: null
+      });
+    }),
 
   deleteSelected: () => {
     const selectedItemId = get().selectedItemId;
@@ -154,11 +211,11 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         locked: false
       };
 
-      return {
+      return withHistory(state, {
         items: [...state.items, duplicate],
         selectedItemId: duplicate.id,
         storageMessage: null
-      };
+      });
     }),
 
   rotateSelected: (delta) => {
@@ -190,7 +247,7 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         })
       );
 
-      return {
+      return withHistory(state, {
         desk: {
           ...state.desk,
           widthCm: template.desk.widthCm,
@@ -200,6 +257,36 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         items,
         selectedItemId: null,
         storageMessage: `${template.name} loaded.`
+      });
+    }),
+
+  undo: () =>
+    set((state) => {
+      const previous = state.historyPast[state.historyPast.length - 1];
+      if (!previous) return state;
+
+      return {
+        desk: cloneDesk(previous.desk),
+        items: cloneItems(previous.items),
+        selectedItemId: previous.selectedItemId,
+        historyPast: state.historyPast.slice(0, -1),
+        historyFuture: [createHistoryEntry(state), ...state.historyFuture].slice(0, HISTORY_LIMIT),
+        storageMessage: "Undone."
+      };
+    }),
+
+  redo: () =>
+    set((state) => {
+      const next = state.historyFuture[0];
+      if (!next) return state;
+
+      return {
+        desk: cloneDesk(next.desk),
+        items: cloneItems(next.items),
+        selectedItemId: next.selectedItemId,
+        historyPast: [...state.historyPast, createHistoryEntry(state)].slice(-HISTORY_LIMIT),
+        historyFuture: state.historyFuture.slice(1),
+        storageMessage: "Redone."
       };
     }),
 
@@ -220,22 +307,26 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
       return;
     }
 
-    set({
-      desk: snapshot.desk,
-      items: snapshot.items,
-      selectedItemId: null,
-      storageMessage: "Saved setup loaded."
-    });
+    set((state) =>
+      withHistory(state, {
+        desk: snapshot.desk,
+        items: snapshot.items,
+        selectedItemId: null,
+        storageMessage: "Saved setup loaded."
+      })
+    );
   },
 
   resetSetup: () => {
     clearPlannerSnapshot();
-    set({
-      desk: defaultDesk,
-      items: [],
-      selectedItemId: null,
-      storageMessage: "Setup reset."
-    });
+    set((state) =>
+      withHistory(state, {
+        desk: defaultDesk,
+        items: [],
+        selectedItemId: null,
+        storageMessage: "Setup reset."
+      })
+    );
   },
 
   registerCanvasExporter: (exporter) => set({ canvasExporter: exporter }),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Grid3X3, MonitorSmartphone, Ruler, Share2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Github, Grid3X3, MonitorSmartphone, Ruler, Share2 } from "lucide-react";
 
 const features = [
   {
@@ -35,13 +35,25 @@ export default function LandingPage() {
             </div>
             <span className="text-lg font-bold tracking-tight">DeskFit</span>
           </div>
-          <Link
-            href="/planner"
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-slate-800"
-          >
-            Start Planning
-            <ArrowRight size={16} aria-hidden />
-          </Link>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://github.com/zeondev19/deskfit-app"
+              target="_blank"
+              rel="noreferrer"
+              title="View on GitHub"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white/80 text-slate-700 shadow-sm transition hover:border-teal-300 hover:bg-teal-50"
+            >
+              <Github size={17} aria-hidden />
+              <span className="sr-only">View on GitHub</span>
+            </a>
+            <Link
+              href="/planner"
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-slate-800"
+            >
+              Start Planning
+              <ArrowRight size={16} aria-hidden />
+            </Link>
+          </div>
         </nav>
 
         <div className="grid flex-1 items-center gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:py-12">
@@ -105,6 +117,13 @@ export default function LandingPage() {
             </article>
           ))}
         </div>
+
+        <footer className="flex flex-col gap-2 pt-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>DeskFit MVP</span>
+          <a href="https://github.com/zeondev19/deskfit-app" target="_blank" rel="noreferrer" className="font-semibold text-slate-700 transition hover:text-teal-700">
+            github.com/zeondev19/deskfit-app
+          </a>
+        </footer>
       </section>
     </main>
   );

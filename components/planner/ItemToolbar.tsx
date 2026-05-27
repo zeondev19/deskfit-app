@@ -1,11 +1,15 @@
 "use client";
 
-import { Copy, Download, Lock, RotateCcw, RotateCw, Trash2, Unlock } from "lucide-react";
+import { Copy, Download, Lock, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Unlock } from "lucide-react";
 import { usePlannerStore } from "@/store/plannerStore";
 
 export default function ItemToolbar() {
   const selectedItemId = usePlannerStore((state) => state.selectedItemId);
   const selectedItem = usePlannerStore((state) => state.items.find((item) => item.id === state.selectedItemId));
+  const canUndo = usePlannerStore((state) => state.historyPast.length > 0);
+  const canRedo = usePlannerStore((state) => state.historyFuture.length > 0);
+  const undo = usePlannerStore((state) => state.undo);
+  const redo = usePlannerStore((state) => state.redo);
   const duplicateSelected = usePlannerStore((state) => state.duplicateSelected);
   const deleteSelected = usePlannerStore((state) => state.deleteSelected);
   const rotateSelected = usePlannerStore((state) => state.rotateSelected);
@@ -26,6 +30,24 @@ export default function ItemToolbar() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={undo}
+          disabled={!canUndo}
+          title="Undo"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Undo2 size={17} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Redo2 size={17} aria-hidden />
+        </button>
         <button
           type="button"
           onClick={() => rotateSelected(-15)}

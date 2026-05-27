@@ -2,6 +2,8 @@
 
 DeskFit is a 2D desk setup planner built with Next.js, TypeScript, Tailwind CSS, Zustand, and React Konva.
 
+Live demo: https://deskfit-app.vercel.app/
+
 Users can customize desk dimensions, add common desk items, drag, rotate, resize, lock, duplicate, validate fit, apply templates, save locally, and export the setup as a PNG.
 
 ## Features
@@ -46,12 +48,19 @@ npm run lint
 npm run start
 ```
 
+## Tech Stack
+
+- Next.js App Router
+- TypeScript
+- React
+- Tailwind CSS
+- Zustand
+- React Konva
+
 ## Roadmap
 
 - Supabase auth and cloud saves
 - Shareable setup links
 - Multiple saved setups dashboard
-- Undo/redo
-- Zoom and pan
 - Alignment tools
 - More templates and item presets

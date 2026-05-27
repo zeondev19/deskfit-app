@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Konva from "konva";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, LocateFixed, ZoomIn, ZoomOut } from "lucide-react";
 import { Circle, Ellipse, Group, Layer, Line, Rect, Stage, Text, Transformer } from "react-konva";
 import { getItemCorners, validateFit } from "@/lib/fitValidation";
 import { usePlannerStore } from "@/store/plannerStore";
@@ -13,6 +14,8 @@ const deskThemeStyles: Record<DeskConfig["theme"], { fill: string; stroke: strin
   white: { fill: "#f8fafc", stroke: "#cbd5e1", grain: "rgba(15, 23, 42, 0.08)" },
   graphite: { fill: "#34383e", stroke: "#15191f", grain: "rgba(255, 255, 255, 0.10)" }
 };
+
+const clampZoom = (value: number) => Math.min(2.4, Math.max(0.55, value));
 
 const useElementSize = () => {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -195,12 +198,15 @@ export default function DeskCanvas() {
   const stageRef = useRef<Konva.Stage | null>(null);
   const transformerRef = useRef<Konva.Transformer | null>(null);
   const itemRefs = useRef<Record<string, Konva.Group | null>>({});
+  const [view, setView] = useState({ zoom: 1, panX: 0, panY: 0 });
 
   const desk = usePlannerStore((state) => state.desk);
   const items = usePlannerStore((state) => state.items);
   const selectedItemId = usePlannerStore((state) => state.selectedItemId);
   const selectItem = usePlannerStore((state) => state.selectItem);
   const updateItem = usePlannerStore((state) => state.updateItem);
+  const undo = usePlannerStore((state) => state.undo);
+  const redo = usePlannerStore((state) => state.redo);
   const registerCanvasExporter = usePlannerStore((state) => state.registerCanvasExporter);
 
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
@@ -211,6 +217,8 @@ export default function DeskCanvas() {
   const deskDepthPx = desk.depthCm * scale;
   const offsetX = (size.width - deskWidthPx) / 2;
   const offsetY = (size.height - deskDepthPx) / 2;
+  const viewX = offsetX + view.panX;
+  const viewY = offsetY + view.panY;
   const theme = deskThemeStyles[desk.theme];
 
   const gridLines = useMemo(() => {
@@ -248,6 +256,33 @@ export default function DeskCanvas() {
     link.remove();
   }, []);
 
+  const updateZoom = useCallback(
+    (nextZoom: number, anchor?: { x: number; y: number }) => {
+      setView((current) => {
+        const zoom = clampZoom(nextZoom);
+        if (!anchor) return { ...current, zoom };
+
+        const worldX = (anchor.x - offsetX - current.panX) / current.zoom;
+        const worldY = (anchor.y - offsetY - current.panY) / current.zoom;
+
+        return {
+          zoom,
+          panX: anchor.x - offsetX - worldX * zoom,
+          panY: anchor.y - offsetY - worldY * zoom
+        };
+      });
+    },
+    [offsetX, offsetY]
+  );
+
+  const panBy = useCallback((x: number, y: number) => {
+    setView((current) => ({ ...current, panX: current.panX + x, panY: current.panY + y }));
+  }, []);
+
+  const resetView = useCallback(() => {
+    setView({ zoom: 1, panX: 0, panY: 0 });
+  }, []);
+
   useEffect(() => {
     registerCanvasExporter(exportCanvas);
     return () => registerCanvasExporter(null);
@@ -267,6 +302,21 @@ export default function DeskCanvas() {
       const target = event.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
 
+      const key = event.key.toLowerCase();
+      const hasCommandKey = event.ctrlKey || event.metaKey;
+
+      if (hasCommandKey && key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+        return;
+      }
+
+      if (hasCommandKey && (key === "y" || (key === "z" && event.shiftKey))) {
+        event.preventDefault();
+        redo();
+        return;
+      }
+
       if (event.key === "Escape") {
         selectItem(null);
       }
@@ -274,15 +324,32 @@ export default function DeskCanvas() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectItem]);
+  }, [redo, selectItem, undo]);
 
   return (
-    <div ref={containerRef} className="h-full min-h-[520px] w-full overflow-hidden bg-[#f6f5f1]">
-      <Stage ref={stageRef} width={size.width} height={size.height} className="h-full w-full">
+    <div ref={containerRef} className="relative h-full min-h-[520px] w-full overflow-hidden bg-[#f6f5f1]">
+      <Stage
+        ref={stageRef}
+        width={size.width}
+        height={size.height}
+        className="h-full w-full"
+        onWheel={(event) => {
+          event.evt.preventDefault();
+
+          if (event.evt.shiftKey) {
+            panBy(-event.evt.deltaY, 0);
+            return;
+          }
+
+          const pointer = stageRef.current?.getPointerPosition();
+          const zoomFactor = event.evt.deltaY > 0 ? 0.92 : 1.08;
+          updateZoom(view.zoom * zoomFactor, pointer ?? undefined);
+        }}
+      >
         <Layer>
           <Rect x={0} y={0} width={size.width} height={size.height} fill="#f6f5f1" onMouseDown={() => selectItem(null)} onTap={() => selectItem(null)} />
 
-          <Group x={offsetX} y={offsetY}>
+          <Group x={viewX} y={viewY} scaleX={view.zoom} scaleY={view.zoom}>
             <Rect
               width={deskWidthPx}
               height={deskDepthPx}
@@ -411,6 +478,66 @@ export default function DeskCanvas() {
           </Group>
         </Layer>
       </Stage>
+      <div className="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-white/90 p-2 shadow-soft backdrop-blur">
+        <button
+          type="button"
+          onClick={() => updateZoom(view.zoom * 0.88)}
+          title="Zoom out"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <ZoomOut size={16} aria-hidden />
+        </button>
+        <span className="min-w-12 text-center text-xs font-black text-slate-700">{Math.round(view.zoom * 100)}%</span>
+        <button
+          type="button"
+          onClick={() => updateZoom(view.zoom * 1.12)}
+          title="Zoom in"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <ZoomIn size={16} aria-hidden />
+        </button>
+        <div className="mx-1 h-7 w-px bg-slate-200" />
+        <button
+          type="button"
+          onClick={() => panBy(0, 32)}
+          title="Pan up"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <ArrowUp size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => panBy(32, 0)}
+          title="Pan left"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <ArrowLeft size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={resetView}
+          title="Reset view"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <LocateFixed size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => panBy(-32, 0)}
+          title="Pan right"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <ArrowRight size={16} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => panBy(0, -32)}
+          title="Pan down"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+        >
+          <ArrowDown size={16} aria-hidden />
+        </button>
+      </div>
     </div>
   );
 }
