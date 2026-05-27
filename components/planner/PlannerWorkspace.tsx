@@ -22,7 +22,7 @@ export default function PlannerWorkspace() {
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-50 text-slate-950">
+    <main className="flex min-h-screen flex-col bg-slate-50 text-slate-950 lg:h-screen lg:overflow-hidden">
       <header className="sticky top-0 z-30 flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link
@@ -73,11 +73,11 @@ export default function PlannerWorkspace() {
         ))}
       </nav>
 
-      <div className="flex flex-1 flex-col overflow-visible lg:grid lg:grid-cols-[310px_minmax(0,1fr)_330px] lg:overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-visible lg:grid lg:min-h-0 lg:grid-cols-[310px_minmax(0,1fr)_330px] lg:overflow-hidden">
         <PlannerSidebar />
-        <section id="planner-canvas" className="order-1 flex min-h-[calc(100svh-165px)] scroll-mt-32 flex-col overflow-hidden lg:order-none lg:min-h-[620px]">
+        <section id="planner-canvas" className="order-1 flex min-h-[calc(100vh-165px)] scroll-mt-32 flex-col overflow-hidden lg:order-none lg:min-h-0">
           <ItemToolbar viewMode={viewMode} />
-          <div className="h-[72svh] min-h-[520px] flex-1 lg:h-auto">
+          <div className="h-[72vh] min-h-[520px] flex-none lg:h-auto lg:min-h-0 lg:flex-1">
             {viewMode === "2d" ? <DeskCanvas /> : <Desk3DPreview />}
           </div>
         </section>
