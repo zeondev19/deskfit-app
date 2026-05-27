@@ -33,6 +33,7 @@ export type DeskItem = {
   name: string;
   widthCm: number;
   depthCm: number;
+  heightCm: number;
   x: number;
   y: number;
   rotation: number;
@@ -72,6 +73,7 @@ export type TemplateItemPlacement = {
   rotation?: number;
   widthCm?: number;
   depthCm?: number;
+  heightCm?: number;
 };
 
 export type DeskTemplate = {

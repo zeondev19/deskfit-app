@@ -7,6 +7,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Compact external display",
     widthCm: 54,
     depthCm: 18,
+    heightCm: 38,
     color: "#1f2937",
     resizable: true
   },
@@ -16,6 +17,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Popular single-monitor size",
     widthCm: 61,
     depthCm: 20,
+    heightCm: 42,
     color: "#111827",
     resizable: true
   },
@@ -25,6 +27,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Large productivity display",
     widthCm: 72,
     depthCm: 24,
+    heightCm: 48,
     color: "#0f172a",
     resizable: true
   },
@@ -34,6 +37,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Portable laptop footprint",
     widthCm: 32,
     depthCm: 22,
+    heightCm: 2,
     color: "#e5e7eb",
     resizable: false
   },
@@ -43,6 +47,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Large laptop footprint",
     widthCm: 36,
     depthCm: 25,
+    heightCm: 2,
     color: "#d1d5db",
     resizable: false
   },
@@ -52,6 +57,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Full keyboard with numpad",
     widthCm: 44,
     depthCm: 14,
+    heightCm: 3,
     color: "#334155",
     resizable: false
   },
@@ -61,6 +67,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Tenkeyless keyboard",
     widthCm: 36,
     depthCm: 14,
+    heightCm: 3,
     color: "#475569",
     resizable: false
   },
@@ -70,6 +77,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Compact keyboard",
     widthCm: 31,
     depthCm: 12,
+    heightCm: 3,
     color: "#64748b",
     resizable: false
   },
@@ -79,6 +87,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Standard mouse",
     widthCm: 7,
     depthCm: 12,
+    heightCm: 4,
     color: "#0f766e",
     resizable: false
   },
@@ -88,6 +97,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Medium mousepad",
     widthCm: 35,
     depthCm: 28,
+    heightCm: 0.8,
     color: "#99f6e4",
     resizable: true
   },
@@ -97,6 +107,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Large desk mat",
     widthCm: 90,
     depthCm: 40,
+    heightCm: 0.8,
     color: "#a7f3d0",
     resizable: true
   },
@@ -106,6 +117,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Stereo speakers as one footprint",
     widthCm: 34,
     depthCm: 18,
+    heightCm: 22,
     color: "#f59e0b",
     resizable: true
   },
@@ -115,6 +127,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Lamp base",
     widthCm: 16,
     depthCm: 16,
+    heightCm: 38,
     color: "#facc15",
     resizable: true
   },
@@ -124,6 +137,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Desktop tower",
     widthCm: 24,
     depthCm: 45,
+    heightCm: 48,
     color: "#171717",
     resizable: true
   },
@@ -133,6 +147,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Small accessory stand",
     widthCm: 15,
     depthCm: 15,
+    heightCm: 28,
     color: "#c084fc",
     resizable: true
   },
@@ -142,6 +157,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     description: "Raised shelf or monitor riser",
     widthCm: 100,
     depthCm: 22,
+    heightCm: 10,
     color: "#b45309",
     resizable: true
   }
@@ -161,7 +177,7 @@ export const createDeskItem = (
   id: string,
   x: number,
   y: number,
-  overrides: Partial<Pick<DeskItem, "widthCm" | "depthCm" | "rotation" | "color" | "locked">> = {}
+  overrides: Partial<Pick<DeskItem, "widthCm" | "depthCm" | "heightCm" | "rotation" | "color" | "locked">> = {}
 ): DeskItem => {
   const definition = getItemDefinition(type);
 
@@ -171,11 +187,22 @@ export const createDeskItem = (
     name: definition.name,
     widthCm: overrides.widthCm ?? definition.widthCm,
     depthCm: overrides.depthCm ?? definition.depthCm,
+    heightCm: overrides.heightCm ?? definition.heightCm,
     x,
     y,
     rotation: overrides.rotation ?? 0,
     color: overrides.color ?? definition.color,
     locked: overrides.locked ?? false,
     resizable: definition.resizable
+  };
+};
+
+export const normalizeDeskItem = (item: DeskItem): DeskItem => {
+  const definition = getItemDefinition(item.type);
+
+  return {
+    ...item,
+    heightCm: item.heightCm ?? definition.heightCm,
+    resizable: item.resizable ?? definition.resizable
   };
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { createDeskItem } from "@/lib/deskItems";
+import { createDeskItem, normalizeDeskItem } from "@/lib/deskItems";
 import { clearPlannerSnapshot, loadPlannerSnapshot, savePlannerSnapshot } from "@/lib/storage";
 import { getDeskTemplate } from "@/lib/templates";
 import type { DeskConfig, DeskItem, DeskItemType, DeskTheme, PlannerSnapshot } from "@/types/planner";
@@ -169,6 +169,7 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
             y: nextY,
             widthCm: updates.widthCm === undefined ? item.widthCm : Math.max(4, Math.round(updates.widthCm * 10) / 10),
             depthCm: updates.depthCm === undefined ? item.depthCm : Math.max(4, Math.round(updates.depthCm * 10) / 10),
+            heightCm: updates.heightCm === undefined ? item.heightCm : Math.max(0.5, Math.round(updates.heightCm * 10) / 10),
             rotation:
               updates.rotation === undefined
                 ? item.rotation
@@ -243,7 +244,8 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         createDeskItem(placement.type, createId(), placement.x, placement.y, {
           rotation: placement.rotation,
           widthCm: placement.widthCm,
-          depthCm: placement.depthCm
+          depthCm: placement.depthCm,
+          heightCm: placement.heightCm
         })
       );
 
@@ -310,7 +312,7 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
     set((state) =>
       withHistory(state, {
         desk: snapshot.desk,
-        items: snapshot.items,
+        items: snapshot.items.map(normalizeDeskItem),
         selectedItemId: null,
         storageMessage: "Saved setup loaded."
       })

@@ -65,7 +65,7 @@ export default function ItemPropertiesPanel() {
                 <Ruler size={14} aria-hidden />
                 Size
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <label className="text-xs font-semibold text-slate-500">
                   Width cm
                   <input
@@ -83,6 +83,16 @@ export default function ItemPropertiesPanel() {
                     value={selectedItem.depthCm}
                     disabled={selectedItem.locked || !selectedItem.resizable}
                     onChange={(event) => updateItem(selectedItem.id, { depthCm: Number(event.target.value) })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                </label>
+                <label className="text-xs font-semibold text-slate-500">
+                  Height cm
+                  <input
+                    type="number"
+                    value={selectedItem.heightCm}
+                    disabled={selectedItem.locked || !selectedItem.resizable}
+                    onChange={(event) => updateItem(selectedItem.id, { heightCm: Number(event.target.value) })}
                     className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100 disabled:text-slate-400"
                   />
                 </label>

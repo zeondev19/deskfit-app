@@ -24,7 +24,7 @@ export default function ItemToolbar() {
         <p className="text-sm font-bold text-slate-950">{selectedItem ? selectedItem.name : "Desk planner"}</p>
         <p className="text-xs text-slate-500">
           {selectedItem
-            ? `${selectedItem.widthCm} x ${selectedItem.depthCm} cm, ${Math.round(selectedItem.rotation)} deg`
+            ? `${selectedItem.widthCm} x ${selectedItem.depthCm} x ${selectedItem.heightCm} cm, ${Math.round(selectedItem.rotation)} deg`
             : "Drag items, select to edit, export when ready."}
         </p>
       </div>
