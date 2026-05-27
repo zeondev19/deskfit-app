@@ -18,6 +18,7 @@ Users can customize desk dimensions, add common desk items, drag, rotate, resize
 - Setup templates
 - localStorage save/load/reset
 - PNG export
+- 3D preview beta with camera presets and 3D PNG export
 
 ## Getting Started
 
@@ -56,6 +57,9 @@ npm run start
 - Tailwind CSS
 - Zustand
 - React Konva
+- Three.js
+- React Three Fiber
+- Drei
 
 ## Roadmap
 

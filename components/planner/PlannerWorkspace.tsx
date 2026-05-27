@@ -64,7 +64,7 @@ export default function PlannerWorkspace() {
       <div className="flex flex-1 flex-col overflow-hidden lg:grid lg:grid-cols-[310px_minmax(0,1fr)_330px]">
         <PlannerSidebar />
         <section className="flex min-h-[620px] min-w-0 flex-1 flex-col overflow-hidden">
-          <ItemToolbar />
+          <ItemToolbar viewMode={viewMode} />
           <div className="min-h-[520px] flex-1">
             {viewMode === "2d" ? <DeskCanvas /> : <Desk3DPreview />}
           </div>

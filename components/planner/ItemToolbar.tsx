@@ -3,7 +3,7 @@
 import { Copy, Download, Lock, Redo2, RotateCcw, RotateCw, Trash2, Undo2, Unlock } from "lucide-react";
 import { usePlannerStore } from "@/store/plannerStore";
 
-export default function ItemToolbar() {
+export default function ItemToolbar({ viewMode = "2d" }: { viewMode?: "2d" | "3d" }) {
   const selectedItemId = usePlannerStore((state) => state.selectedItemId);
   const selectedItem = usePlannerStore((state) => state.items.find((item) => item.id === state.selectedItemId));
   const canUndo = usePlannerStore((state) => state.historyPast.length > 0);
@@ -96,11 +96,12 @@ export default function ItemToolbar() {
         <button
           type="button"
           onClick={requestCanvasExport}
-          title="Export PNG"
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-teal-700 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800"
+          disabled={viewMode === "3d"}
+          title={viewMode === "3d" ? "Use Export 3D PNG in the preview controls" : "Export 2D PNG"}
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-teal-700 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
         >
           <Download size={17} aria-hidden />
-          Export PNG
+          {viewMode === "3d" ? "2D Export" : "Export PNG"}
         </button>
       </div>
     </div>
