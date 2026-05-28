@@ -1,9 +1,10 @@
 "use client";
 
-import { Grid3X3, HardDriveDownload, MousePointer2, Plus, RefreshCcw, Ruler, Save, Upload } from "lucide-react";
+import { Grid3X3, MousePointer2, Plus, Ruler } from "lucide-react";
 import { ITEM_DEFINITIONS } from "@/lib/deskItems";
 import { usePlannerStore } from "@/store/plannerStore";
 import type { DeskTheme } from "@/types/planner";
+import MySetupsPanel from "./MySetupsPanel";
 import TemplateSelector from "./TemplateSelector";
 
 const themes: Array<{ id: DeskTheme; label: string; className: string }> = [
@@ -15,15 +16,11 @@ const themes: Array<{ id: DeskTheme; label: string; className: string }> = [
 
 export default function PlannerSidebar() {
   const desk = usePlannerStore((state) => state.desk);
-  const storageMessage = usePlannerStore((state) => state.storageMessage);
   const setDeskSize = usePlannerStore((state) => state.setDeskSize);
   const setDeskTheme = usePlannerStore((state) => state.setDeskTheme);
   const toggleGrid = usePlannerStore((state) => state.toggleGrid);
   const toggleSnap = usePlannerStore((state) => state.toggleSnap);
   const addItem = usePlannerStore((state) => state.addItem);
-  const saveSetup = usePlannerStore((state) => state.saveSetup);
-  const loadSetup = usePlannerStore((state) => state.loadSetup);
-  const resetSetup = usePlannerStore((state) => state.resetSetup);
 
   return (
     <aside id="planner-setup" className="thin-scrollbar order-2 flex h-auto scroll-mt-32 flex-col gap-4 overflow-visible border-b border-slate-200 bg-white/80 p-4 backdrop-blur lg:order-none lg:h-full lg:w-[310px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
@@ -103,6 +100,8 @@ export default function PlannerSidebar() {
 
       <TemplateSelector />
 
+      <MySetupsPanel />
+
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
           <Plus size={18} className="text-teal-700" aria-hidden />
@@ -128,43 +127,6 @@ export default function PlannerSidebar() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={saveSetup}
-            title="Save setup"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            <Save size={16} aria-hidden />
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={loadSetup}
-            title="Load setup"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
-          >
-            <Upload size={16} aria-hidden />
-            Load
-          </button>
-          <button
-            type="button"
-            onClick={resetSetup}
-            title="Reset setup"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
-          >
-            <RefreshCcw size={16} aria-hidden />
-            Reset
-          </button>
-        </div>
-        {storageMessage ? (
-          <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-slate-500">
-            <HardDriveDownload size={14} aria-hidden />
-            {storageMessage}
-          </p>
-        ) : null}
-      </section>
     </aside>
   );
 }

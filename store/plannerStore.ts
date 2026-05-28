@@ -2,9 +2,19 @@
 
 import { create } from "zustand";
 import { createDeskItem, normalizeDeskItem } from "@/lib/deskItems";
-import { clearPlannerSnapshot, loadPlannerSnapshot, savePlannerSnapshot } from "@/lib/storage";
+import {
+  clearPlannerSnapshot,
+  deleteSavedSetup as removeSavedSetup,
+  duplicateSavedSetup as cloneSavedSetup,
+  getSavedSetup,
+  listSavedSetups,
+  loadPlannerSnapshot,
+  parsePlannerSnapshot,
+  savePlannerSnapshot,
+  upsertSavedSetup
+} from "@/lib/storage";
 import { getDeskTemplate } from "@/lib/templates";
-import type { DeskConfig, DeskItem, DeskItemType, DeskTheme, PlannerSnapshot } from "@/types/planner";
+import type { DeskConfig, DeskItem, DeskItemType, DeskTheme, PlannerSnapshot, SavedPlannerSetup } from "@/types/planner";
 
 const defaultDesk: DeskConfig = {
   widthCm: 140,
@@ -41,6 +51,12 @@ type PlannerStateShape = {
   selectedItemId: string | null;
 };
 
+type PlannerStateChanges = Partial<PlannerStateShape> & {
+  storageMessage?: string | null;
+  savedSetups?: SavedPlannerSetup[];
+  activeSetupId?: string | null;
+};
+
 const cloneDesk = (desk: DeskConfig): DeskConfig => ({ ...desk });
 
 const cloneItems = (items: DeskItem[]): DeskItem[] => items.map((item) => ({ ...item }));
@@ -51,7 +67,27 @@ const createHistoryEntry = (state: PlannerStateShape): PlannerHistoryEntry => ({
   selectedItemId: state.selectedItemId
 });
 
-const withHistory = <T extends Partial<PlannerStateShape> & { storageMessage?: string | null }>(
+const createSnapshot = (desk: DeskConfig, items: DeskItem[]): PlannerSnapshot => ({
+  version: 1,
+  desk: cloneDesk(desk),
+  items: cloneItems(items)
+});
+
+const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "deskfit-setup";
+
+const downloadSetupJson = (setup: SavedPlannerSetup) => {
+  const blob = new Blob([JSON.stringify(setup, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${slugify(setup.name)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
+const withHistory = <T extends PlannerStateChanges>(
   state: PlannerStateShape & { historyPast: PlannerHistoryEntry[] },
   changes: T
 ) => ({
@@ -65,6 +101,8 @@ type PlannerStore = {
   items: DeskItem[];
   selectedItemId: string | null;
   storageMessage: string | null;
+  savedSetups: SavedPlannerSetup[];
+  activeSetupId: string | null;
   historyPast: PlannerHistoryEntry[];
   historyFuture: PlannerHistoryEntry[];
   canvasExporter: (() => void) | null;
@@ -83,6 +121,14 @@ type PlannerStore = {
   applyTemplate: (templateId: string) => void;
   undo: () => void;
   redo: () => void;
+  refreshSavedSetups: () => void;
+  saveNamedSetup: (name: string) => void;
+  loadSavedSetup: (setupId: string) => void;
+  deleteSavedSetup: (setupId: string) => void;
+  duplicateSavedSetup: (setupId: string) => void;
+  exportCurrentSetup: (name?: string) => void;
+  exportSavedSetup: (setupId: string) => void;
+  importSetupFromJson: (raw: string, fallbackName?: string) => void;
   saveSetup: () => void;
   loadSetup: () => void;
   resetSetup: () => void;
@@ -95,6 +141,8 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
   items: [],
   selectedItemId: null,
   storageMessage: null,
+  savedSetups: [],
+  activeSetupId: null,
   historyPast: [],
   historyFuture: [],
   canvasExporter: null,
@@ -258,6 +306,7 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         },
         items,
         selectedItemId: null,
+        activeSetupId: null,
         storageMessage: `${template.name} loaded.`
       });
     }),
@@ -292,14 +341,133 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
       };
     }),
 
-  saveSetup: () => {
-    const snapshot: PlannerSnapshot = {
-      version: 1,
-      desk: get().desk,
-      items: get().items
-    };
+  refreshSavedSetups: () => set({ savedSetups: listSavedSetups() }),
+
+  saveNamedSetup: (name) => {
+    const snapshot = createSnapshot(get().desk, get().items);
+    const saved = upsertSavedSetup(name, snapshot, get().activeSetupId);
     savePlannerSnapshot(snapshot);
-    set({ storageMessage: "Setup saved locally." });
+
+    set({
+      savedSetups: listSavedSetups(),
+      activeSetupId: saved.id,
+      storageMessage: `${saved.name} saved.`
+    });
+  },
+
+  loadSavedSetup: (setupId) => {
+    const setup = getSavedSetup(setupId);
+    if (!setup) {
+      set({ savedSetups: listSavedSetups(), storageMessage: "Saved setup not found." });
+      return;
+    }
+
+    set((state) =>
+      withHistory(state, {
+        desk: setup.snapshot.desk,
+        items: setup.snapshot.items.map(normalizeDeskItem),
+        selectedItemId: null,
+        activeSetupId: setup.id,
+        savedSetups: listSavedSetups(),
+        storageMessage: `${setup.name} loaded.`
+      })
+    );
+  },
+
+  deleteSavedSetup: (setupId) => {
+    const setup = getSavedSetup(setupId);
+    removeSavedSetup(setupId);
+    set((state) => ({
+      savedSetups: listSavedSetups(),
+      activeSetupId: state.activeSetupId === setupId ? null : state.activeSetupId,
+      storageMessage: setup ? `${setup.name} deleted.` : "Setup deleted."
+    }));
+  },
+
+  duplicateSavedSetup: (setupId) => {
+    const duplicated = cloneSavedSetup(setupId);
+    set({
+      savedSetups: listSavedSetups(),
+      storageMessage: duplicated ? `${duplicated.name} created.` : "Setup could not be duplicated."
+    });
+  },
+
+  exportCurrentSetup: (name) => {
+    if (typeof document === "undefined") return;
+
+    const activeSetup = get().activeSetupId ? getSavedSetup(get().activeSetupId as string) : null;
+    const exportedName = (name?.trim() || activeSetup?.name || "DeskFit setup").trim();
+    const now = new Date().toISOString();
+    const payload: SavedPlannerSetup = {
+      id: activeSetup?.id ?? `export-${Date.now()}`,
+      name: exportedName,
+      createdAt: activeSetup?.createdAt ?? now,
+      updatedAt: now,
+      snapshot: createSnapshot(get().desk, get().items)
+    };
+    downloadSetupJson(payload);
+    set({ storageMessage: `${exportedName} exported as JSON.` });
+  },
+
+  exportSavedSetup: (setupId) => {
+    if (typeof document === "undefined") return;
+
+    const setup = getSavedSetup(setupId);
+    if (!setup) {
+      set({ savedSetups: listSavedSetups(), storageMessage: "Saved setup not found." });
+      return;
+    }
+
+    downloadSetupJson(setup);
+    set({ storageMessage: `${setup.name} exported as JSON.` });
+  },
+
+  importSetupFromJson: (raw, fallbackName) => {
+    const snapshot = parsePlannerSnapshot(raw);
+    if (!snapshot) {
+      set({ storageMessage: "Import failed. The JSON file is not a DeskFit setup." });
+      return;
+    }
+
+    let importedName = fallbackName?.replace(/\.json$/i, "").trim() || "Imported setup";
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<SavedPlannerSetup>;
+      if (typeof parsed.name === "string" && parsed.name.trim()) {
+        importedName = parsed.name.trim();
+      }
+    } catch {
+      // The snapshot already parsed successfully, so the fallback name is enough.
+    }
+
+    const normalizedSnapshot: PlannerSnapshot = {
+      ...snapshot,
+      items: snapshot.items.map(normalizeDeskItem)
+    };
+    const saved = upsertSavedSetup(importedName, normalizedSnapshot, null);
+
+    set((state) =>
+      withHistory(state, {
+        desk: normalizedSnapshot.desk,
+        items: normalizedSnapshot.items,
+        selectedItemId: null,
+        activeSetupId: saved.id,
+        savedSetups: listSavedSetups(),
+        storageMessage: `${saved.name} imported.`
+      })
+    );
+  },
+
+  saveSetup: () => {
+    const activeSetup = get().activeSetupId ? getSavedSetup(get().activeSetupId as string) : null;
+    const snapshot = createSnapshot(get().desk, get().items);
+    savePlannerSnapshot(snapshot);
+    const saved = upsertSavedSetup(activeSetup?.name ?? "Quick Save", snapshot, activeSetup?.id ?? null);
+    set({
+      savedSetups: listSavedSetups(),
+      activeSetupId: saved.id,
+      storageMessage: `${saved.name} saved.`
+    });
   },
 
   loadSetup: () => {
@@ -314,6 +482,7 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         desk: snapshot.desk,
         items: snapshot.items.map(normalizeDeskItem),
         selectedItemId: null,
+        activeSetupId: null,
         storageMessage: "Saved setup loaded."
       })
     );
@@ -326,6 +495,7 @@ export const usePlannerStore = create<PlannerStore>((set, get) => ({
         desk: defaultDesk,
         items: [],
         selectedItemId: null,
+        activeSetupId: null,
         storageMessage: "Setup reset."
       })
     );

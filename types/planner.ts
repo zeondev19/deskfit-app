@@ -89,3 +89,11 @@ export type PlannerSnapshot = {
   desk: DeskConfig;
   items: DeskItem[];
 };
+
+export type SavedPlannerSetup = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  snapshot: PlannerSnapshot;
+};
