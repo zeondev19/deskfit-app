@@ -152,7 +152,7 @@ function KeyboardModel({ item }: { item: DeskItem }) {
 
   return (
     <group>
-      <GenericBlock item={item} color="#0f172a" height={bodyHeight} />
+      <GenericBlock item={item} color="#e5e7eb" height={bodyHeight} />
       {Array.from({ length: rows }).map((_, row) =>
         Array.from({ length: columns }).map((__, column) => (
           <mesh
@@ -164,13 +164,13 @@ function KeyboardModel({ item }: { item: DeskItem }) {
             ]}
           >
             <boxGeometry args={[keyWidth * 0.78, 0.34, keyDepth * 0.7]} />
-            <meshStandardMaterial color="#f8fafc" roughness={0.48} />
+            <meshStandardMaterial color="#0f172a" roughness={0.48} />
           </mesh>
         ))
       )}
       <mesh position={[0, keyTopY + 0.04, item.depthCm * 0.3]}>
         <boxGeometry args={[item.widthCm * 0.34, 0.3, keyDepth * 0.55]} />
-        <meshStandardMaterial color="#e2e8f0" roughness={0.52} />
+        <meshStandardMaterial color="#111827" roughness={0.52} />
       </mesh>
     </group>
   );
