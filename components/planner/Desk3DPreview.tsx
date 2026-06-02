@@ -70,6 +70,8 @@ function GenericBlock({ item, color = item.color, height = safeHeight(item) }: {
 
 function MonitorModel({ item }: { item: DeskItem }) {
   const screenHeight = Math.max(22, safeHeight(item) * 0.58);
+  const panelZ = -item.depthCm * 0.18;
+  const displayFaceZ = panelZ + 1.48;
 
   return (
     <group>
@@ -79,21 +81,21 @@ function MonitorModel({ item }: { item: DeskItem }) {
       <RoundedBox args={[2.4, screenHeight * 0.48, 2.4]} radius={0.7} smoothness={5} position={[0, screenHeight * 0.28, item.depthCm * 0.07]} castShadow>
         <meshStandardMaterial color="#475569" roughness={0.42} metalness={0.16} />
       </RoundedBox>
-      <RoundedBox args={[item.widthCm, screenHeight, 2.8]} radius={2.2} smoothness={6} position={[0, screenHeight * 0.64, -item.depthCm * 0.18]} castShadow>
+      <RoundedBox args={[item.widthCm, screenHeight, 2.8]} radius={2.2} smoothness={6} position={[0, screenHeight * 0.64, panelZ]} castShadow>
         <meshStandardMaterial color="#020617" roughness={0.26} metalness={0.24} />
       </RoundedBox>
-      <RoundedBox args={[item.widthCm * 0.89, screenHeight * 0.75, 0.32]} radius={1.2} smoothness={5} position={[0, screenHeight * 0.64, -item.depthCm * 0.205]}>
+      <RoundedBox args={[item.widthCm * 0.89, screenHeight * 0.75, 0.32]} radius={1.2} smoothness={5} position={[0, screenHeight * 0.64, displayFaceZ]}>
         <meshStandardMaterial color="#0f172a" emissive="#172554" emissiveIntensity={0.18} roughness={0.18} metalness={0.08} />
       </RoundedBox>
-      <mesh position={[-item.widthCm * 0.25, screenHeight * 0.76, -item.depthCm * 0.35]}>
+      <mesh position={[-item.widthCm * 0.25, screenHeight * 0.76, displayFaceZ + 0.24]}>
         <boxGeometry args={[item.widthCm * 0.25, 1.2, 0.35]} />
         <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.2} roughness={0.2} />
       </mesh>
-      <mesh position={[item.widthCm * 0.18, screenHeight * 0.58, -item.depthCm * 0.35]}>
+      <mesh position={[item.widthCm * 0.18, screenHeight * 0.58, displayFaceZ + 0.24]}>
         <boxGeometry args={[item.widthCm * 0.32, 1, 0.35]} />
         <meshStandardMaterial color="#14b8a6" emissive="#0f766e" emissiveIntensity={0.16} roughness={0.2} />
       </mesh>
-      <mesh position={[0, screenHeight * 0.24, -item.depthCm * 0.28]} rotation={[0, 0, 0]}>
+      <mesh position={[0, screenHeight * 0.24, displayFaceZ + 0.18]} rotation={[0, 0, 0]}>
         <torusGeometry args={[item.widthCm * 0.1, 0.45, 10, 40]} />
         <meshStandardMaterial color="#1f2937" roughness={0.42} metalness={0.18} />
       </mesh>
@@ -103,6 +105,8 @@ function MonitorModel({ item }: { item: DeskItem }) {
 
 function LaptopModel({ item }: { item: DeskItem }) {
   const keySize = Math.max(1.1, item.widthCm / 16);
+  const screenZ = -item.depthCm * 0.48;
+  const screenFaceZ = screenZ + 0.68;
 
   return (
     <group>
@@ -119,10 +123,10 @@ function LaptopModel({ item }: { item: DeskItem }) {
         <boxGeometry args={[item.widthCm * 0.22, 0.2, item.depthCm * 0.18]} />
         <meshStandardMaterial color="#94a3b8" roughness={0.55} />
       </mesh>
-      <RoundedBox args={[item.widthCm, 16, 1.2]} radius={1.2} smoothness={5} position={[0, 9, -item.depthCm * 0.48]} rotation={[toRadians(-18), 0, 0]} castShadow>
+      <RoundedBox args={[item.widthCm, 16, 1.2]} radius={1.2} smoothness={5} position={[0, 9, screenZ]} rotation={[toRadians(-18), 0, 0]} castShadow>
         <meshStandardMaterial color="#111827" roughness={0.28} metalness={0.28} />
       </RoundedBox>
-      <RoundedBox args={[item.widthCm * 0.84, 11, 0.22]} radius={0.8} smoothness={5} position={[0, 9, -item.depthCm * 0.53]} rotation={[toRadians(-18), 0, 0]}>
+      <RoundedBox args={[item.widthCm * 0.84, 11, 0.22]} radius={0.8} smoothness={5} position={[0, 9, screenFaceZ]} rotation={[toRadians(-18), 0, 0]}>
         <meshStandardMaterial color="#1e293b" emissive="#0f766e" emissiveIntensity={0.12} roughness={0.2} />
       </RoundedBox>
     </group>
