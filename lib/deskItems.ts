@@ -88,7 +88,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     widthCm: 7,
     depthCm: 12,
     heightCm: 4,
-    color: "#0f766e",
+    color: "#e5e7eb",
     resizable: false
   },
   {
@@ -108,7 +108,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     widthCm: 90,
     depthCm: 40,
     heightCm: 0.8,
-    color: "#a7f3d0",
+    color: "#111827",
     resizable: true
   },
   {
@@ -118,7 +118,7 @@ export const ITEM_DEFINITIONS: DeskItemDefinition[] = [
     widthCm: 34,
     depthCm: 18,
     heightCm: 22,
-    color: "#f59e0b",
+    color: "#111827",
     resizable: true
   },
   {

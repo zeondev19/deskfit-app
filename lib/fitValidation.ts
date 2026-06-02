@@ -66,6 +66,13 @@ const polygonsOverlap = (a: Point[], b: Point[]) => {
 const isOutsideDesk = (item: DeskItem, desk: DeskConfig) =>
   getItemCorners(item).some((corner) => corner.x < 0 || corner.y < 0 || corner.x > desk.widthCm || corner.y > desk.depthCm);
 
+const canLayerOnMousepad = (a: DeskItem, b: DeskItem) => {
+  const mousepad = a.type.startsWith("mousepad") ? a : b.type.startsWith("mousepad") ? b : null;
+  const other = mousepad === a ? b : mousepad === b ? a : null;
+
+  return Boolean(mousepad && other && (other.type === "mouse" || other.type.startsWith("keyboard")));
+};
+
 const clampScore = (score: number) => Math.max(0, Math.min(100, Math.round(score)));
 
 export const validateFit = (desk: DeskConfig, items: DeskItem[]): FitValidationResult => {
@@ -76,6 +83,8 @@ export const validateFit = (desk: DeskConfig, items: DeskItem[]): FitValidationR
 
   for (let i = 0; i < items.length; i += 1) {
     for (let j = i + 1; j < items.length; j += 1) {
+      if (canLayerOnMousepad(items[i], items[j])) continue;
+
       if (polygonsOverlap(getItemCorners(items[i]), getItemCorners(items[j]))) {
         overlapCount += 1;
         overlappingItemIds.add(items[i].id);

@@ -21,12 +21,12 @@ export const DESK_TEMPLATES: DeskTemplate[] = [
     desk: { widthCm: 160, depthCm: 80, theme: "graphite" },
     items: [
       { type: "monitor-32", x: 80, y: 18 },
-      { type: "mousepad-xl", x: 77, y: 57 },
-      { type: "keyboard-full", x: 63, y: 57 },
-      { type: "mouse", x: 102, y: 57 },
-      { type: "pc-case", x: 142, y: 51 },
-      { type: "speaker-pair", x: 80, y: 21 },
-      { type: "headphone-stand", x: 18, y: 57 }
+      { type: "speaker-pair", x: 27, y: 21, widthCm: 30, depthCm: 16, heightCm: 20 },
+      { type: "mousepad-xl", x: 78, y: 58 },
+      { type: "keyboard-full", x: 60, y: 58 },
+      { type: "mouse", x: 112, y: 58 },
+      { type: "pc-case", x: 143, y: 33, heightCm: 44 },
+      { type: "headphone-stand", x: 20, y: 58 }
     ]
   },
   {

@@ -18,9 +18,17 @@ const deskThemeColors: Record<DeskConfig["theme"], { top: string; edge: string; 
 };
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+const DESK_TOP_THICKNESS = 2.4;
+const DESK_SURFACE_Y = DESK_TOP_THICKNESS;
 
-const itemPosition = (item: DeskItem, desk: DeskConfig, y = 4) =>
-  [item.x - desk.widthCm / 2, y, item.y - desk.depthCm / 2] as [number, number, number];
+const itemBaseLift = (item: DeskItem) => {
+  if (item.type.startsWith("mousepad")) return 0.08;
+  if (item.type === "mouse" || item.type.startsWith("keyboard")) return 0.95;
+  return 0.14;
+};
+
+const itemPosition = (item: DeskItem, desk: DeskConfig) =>
+  [item.x - desk.widthCm / 2, DESK_SURFACE_Y + itemBaseLift(item), item.y - desk.depthCm / 2] as [number, number, number];
 
 const safeHeight = (item: DeskItem, fallback = 4) => Math.max(0.8, item.heightCm ?? fallback);
 
@@ -35,8 +43,8 @@ function FootprintHighlight({ item, warning }: { item: DeskItem; warning: boolea
   const fill = warning ? "#fef3c7" : "#ccfbf1";
 
   return (
-    <group position={[0, 0.92, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
+    <group position={[0, 0.08, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <planeGeometry args={[width, depth]} />
         <meshBasicMaterial color={fill} transparent opacity={warning ? 0.18 : 0.12} depthWrite={false} side={DoubleSide} />
       </mesh>
@@ -169,10 +177,10 @@ function MousepadModel({ item }: { item: DeskItem }) {
   return (
     <group>
       <RoundedBox args={[item.widthCm, safeHeight(item), item.depthCm]} radius={2.4} smoothness={7} position={[0, safeHeight(item) / 2, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={item.color} roughness={0.74} />
+        <meshStandardMaterial color={item.type === "mousepad-xl" ? "#111827" : item.color} roughness={0.74} />
       </RoundedBox>
       <RoundedBox args={[item.widthCm * 0.92, 0.08, item.depthCm * 0.82]} radius={2} smoothness={7} position={[0, safeHeight(item) + 0.08, 0]}>
-        <meshStandardMaterial color="#ccfbf1" transparent opacity={0.32} roughness={0.7} />
+        <meshStandardMaterial color={item.type === "mousepad-xl" ? "#14b8a6" : "#ccfbf1"} transparent opacity={0.34} roughness={0.7} />
       </RoundedBox>
     </group>
   );
@@ -180,10 +188,16 @@ function MousepadModel({ item }: { item: DeskItem }) {
 
 function MouseModel({ item }: { item: DeskItem }) {
   return (
-    <mesh position={[0, safeHeight(item) / 2, 0]} scale={[item.widthCm / 2, safeHeight(item) / 2, item.depthCm / 2]} castShadow receiveShadow>
-      <sphereGeometry args={[1, 24, 16]} />
-      <meshStandardMaterial color={item.color} roughness={0.4} metalness={0.12} />
-    </mesh>
+    <group>
+      <mesh position={[0, safeHeight(item) / 2, 0]} scale={[item.widthCm / 2, safeHeight(item) / 2, item.depthCm / 2]} castShadow receiveShadow>
+        <sphereGeometry args={[1, 28, 18]} />
+        <meshStandardMaterial color={item.color} roughness={0.42} metalness={0.1} />
+      </mesh>
+      <mesh position={[0, safeHeight(item) + 0.08, -item.depthCm * 0.12]}>
+        <boxGeometry args={[0.8, 0.16, 2.2]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.4} />
+      </mesh>
+    </group>
   );
 }
 
@@ -210,24 +224,25 @@ function PcCaseModel({ item }: { item: DeskItem }) {
 }
 
 function SpeakerPairModel({ item }: { item: DeskItem }) {
-  const speakerWidth = Math.max(8, item.widthCm * 0.36);
-  const gap = item.widthCm * 0.28;
+  const speakerWidth = Math.min(10, Math.max(7, item.widthCm * 0.22));
+  const speakerDepth = Math.min(12, Math.max(8, item.depthCm * 0.72));
+  const speakerHeight = Math.min(safeHeight(item), Math.max(15, safeHeight(item) * 0.9));
+  const sideOffset = Math.max(speakerWidth * 0.75, item.widthCm / 2 - speakerWidth / 2);
 
   return (
     <group>
       {[-1, 1].map((side) => (
-        <group key={side} position={[side * gap, 0, 0]}>
-          <mesh position={[0, safeHeight(item) / 2, 0]} castShadow receiveShadow>
-            <boxGeometry args={[speakerWidth, safeHeight(item), item.depthCm]} />
-            <meshStandardMaterial color={item.color} roughness={0.55} />
+        <group key={side} position={[side * sideOffset, 0, 0]}>
+          <RoundedBox args={[speakerWidth, speakerHeight, speakerDepth]} radius={1.2} smoothness={5} position={[0, speakerHeight / 2, 0]} castShadow receiveShadow>
+            <meshStandardMaterial color="#111827" roughness={0.52} metalness={0.08} />
+          </RoundedBox>
+          <mesh position={[0, speakerHeight * 0.63, speakerDepth / 2 + 0.18]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[speakerWidth * 0.25, speakerWidth * 0.25, 0.42, 28]} />
+            <meshStandardMaterial color="#f59e0b" roughness={0.36} />
           </mesh>
-          <mesh position={[0, safeHeight(item) * 0.62, -item.depthCm / 2 - 0.15]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[speakerWidth * 0.22, speakerWidth * 0.22, 0.4, 24]} />
-            <meshStandardMaterial color="#111827" roughness={0.35} />
-          </mesh>
-          <mesh position={[0, safeHeight(item) * 0.32, -item.depthCm / 2 - 0.16]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[speakerWidth * 0.13, speakerWidth * 0.13, 0.45, 24]} />
-            <meshStandardMaterial color="#1f2937" roughness={0.35} />
+          <mesh position={[0, speakerHeight * 0.34, speakerDepth / 2 + 0.2]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[speakerWidth * 0.16, speakerWidth * 0.16, 0.45, 24]} />
+            <meshStandardMaterial color="#334155" roughness={0.35} />
           </mesh>
         </group>
       ))}
@@ -339,25 +354,26 @@ function DeskModel({ desk }: { desk: DeskConfig }) {
   const colors = deskThemeColors[desk.theme];
   const legX = desk.widthCm / 2 - 8;
   const legZ = desk.depthCm / 2 - 8;
+  const legHeight = 40;
 
   return (
     <group>
-      <RoundedBox args={[desk.widthCm, 4, desk.depthCm]} radius={3.2} smoothness={8} position={[0, 2, 0]} receiveShadow castShadow>
+      <RoundedBox args={[desk.widthCm, DESK_TOP_THICKNESS, desk.depthCm]} radius={2.2} smoothness={7} position={[0, DESK_TOP_THICKNESS / 2, 0]} receiveShadow castShadow>
         <meshStandardMaterial color={colors.top} roughness={0.5} />
       </RoundedBox>
-      <RoundedBox args={[desk.widthCm + 1, 0.7, desk.depthCm + 1]} radius={3.4} smoothness={8} position={[0, 4.25, 0]}>
+      <RoundedBox args={[desk.widthCm + 0.8, 0.28, desk.depthCm + 0.8]} radius={2.4} smoothness={7} position={[0, DESK_SURFACE_Y + 0.12, 0]}>
         <meshStandardMaterial color={colors.edge} roughness={0.48} />
       </RoundedBox>
       {Array.from({ length: 11 }).map((_, index) => (
-        <mesh key={index} position={[0, 4.64, -desk.depthCm * 0.42 + index * (desk.depthCm * 0.084)]}>
+        <mesh key={index} position={[0, DESK_SURFACE_Y + 0.32, -desk.depthCm * 0.42 + index * (desk.depthCm * 0.084)]}>
           <boxGeometry args={[desk.widthCm * 0.92, 0.07, 0.28]} />
           <meshStandardMaterial color={desk.theme === "white" || desk.theme === "graphite" ? "#ffffff" : "#8b5e34"} transparent opacity={0.22} roughness={0.7} />
         </mesh>
       ))}
       {[-1, 1].map((xSide) =>
         [-1, 1].map((zSide) => (
-          <mesh key={`${xSide}-${zSide}`} position={[xSide * legX, -18, zSide * legZ]} castShadow>
-            <boxGeometry args={[4, 40, 4]} />
+          <mesh key={`${xSide}-${zSide}`} position={[xSide * legX, -legHeight / 2, zSide * legZ]} castShadow>
+            <boxGeometry args={[4, legHeight, 4]} />
             <meshStandardMaterial color={colors.leg} roughness={0.5} />
           </mesh>
         ))
