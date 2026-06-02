@@ -23,8 +23,8 @@ export const DESK_TEMPLATES: DeskTemplate[] = [
       { type: "monitor-32", x: 80, y: 18 },
       { type: "speaker-pair", x: 27, y: 21, widthCm: 30, depthCm: 16, heightCm: 20 },
       { type: "mousepad-xl", x: 78, y: 58 },
-      { type: "keyboard-full", x: 60, y: 58 },
-      { type: "mouse", x: 112, y: 58 },
+      { type: "keyboard-full", x: 63, y: 63 },
+      { type: "mouse", x: 114, y: 63 },
       { type: "pc-case", x: 143, y: 33, heightCm: 44 },
       { type: "headphone-stand", x: 20, y: 58 }
     ]

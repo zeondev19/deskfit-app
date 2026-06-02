@@ -146,26 +146,28 @@ function KeyboardModel({ item }: { item: DeskItem }) {
   const columns = item.type === "keyboard-65" ? 8 : item.type === "keyboard-tkl" ? 10 : 12;
   const keyWidth = (item.widthCm * 0.78) / columns;
   const keyDepth = (item.depthCm * 0.58) / rows;
+  const bodyHeight = Math.min(2.1, safeHeight(item));
+  const keyTopY = bodyHeight + 0.28;
 
   return (
     <group>
-      <GenericBlock item={item} height={safeHeight(item)} />
+      <GenericBlock item={item} color="#0f172a" height={bodyHeight} />
       {Array.from({ length: rows }).map((_, row) =>
         Array.from({ length: columns }).map((__, column) => (
           <mesh
             key={`${row}-${column}`}
             position={[
               -item.widthCm * 0.39 + column * keyWidth + keyWidth / 2,
-              safeHeight(item) + 0.28,
+              keyTopY,
               -item.depthCm * 0.29 + row * keyDepth + keyDepth / 2
             ]}
           >
-            <boxGeometry args={[keyWidth * 0.72, 0.32, keyDepth * 0.62]} />
-            <meshStandardMaterial color="#cbd5e1" roughness={0.52} />
+            <boxGeometry args={[keyWidth * 0.78, 0.34, keyDepth * 0.7]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.48} />
           </mesh>
         ))
       )}
-      <mesh position={[0, safeHeight(item) + 0.32, item.depthCm * 0.3]}>
+      <mesh position={[0, keyTopY + 0.04, item.depthCm * 0.3]}>
         <boxGeometry args={[item.widthCm * 0.34, 0.3, keyDepth * 0.55]} />
         <meshStandardMaterial color="#e2e8f0" roughness={0.52} />
       </mesh>
@@ -187,13 +189,17 @@ function MousepadModel({ item }: { item: DeskItem }) {
 }
 
 function MouseModel({ item }: { item: DeskItem }) {
+  const visualWidth = Math.max(item.widthCm, 9.5);
+  const visualDepth = Math.max(item.depthCm, 14);
+  const visualHeight = Math.max(safeHeight(item), 4.2);
+
   return (
     <group>
-      <mesh position={[0, safeHeight(item) / 2, 0]} scale={[item.widthCm / 2, safeHeight(item) / 2, item.depthCm / 2]} castShadow receiveShadow>
+      <mesh position={[0, visualHeight / 2, 0]} scale={[visualWidth / 2, visualHeight / 2, visualDepth / 2]} castShadow receiveShadow>
         <sphereGeometry args={[1, 28, 18]} />
         <meshStandardMaterial color={item.color} roughness={0.42} metalness={0.1} />
       </mesh>
-      <mesh position={[0, safeHeight(item) + 0.08, -item.depthCm * 0.12]}>
+      <mesh position={[0, visualHeight + 0.08, -visualDepth * 0.12]}>
         <boxGeometry args={[0.8, 0.16, 2.2]} />
         <meshStandardMaterial color="#e2e8f0" roughness={0.4} />
       </mesh>
