@@ -23,7 +23,8 @@ const DESK_SURFACE_Y = DESK_TOP_THICKNESS;
 
 const itemBaseLift = (item: DeskItem) => {
   if (item.type.startsWith("mousepad")) return 0.08;
-  if (item.type === "mouse" || item.type.startsWith("keyboard")) return 0.95;
+  if (item.type.startsWith("keyboard")) return 1.45;
+  if (item.type === "mouse") return 1.2;
   return 0.14;
 };
 
@@ -182,7 +183,7 @@ function MousepadModel({ item }: { item: DeskItem }) {
         <meshStandardMaterial color={item.type === "mousepad-xl" ? "#111827" : item.color} roughness={0.74} />
       </RoundedBox>
       <RoundedBox args={[item.widthCm * 0.92, 0.08, item.depthCm * 0.82]} radius={2} smoothness={7} position={[0, safeHeight(item) + 0.08, 0]}>
-        <meshStandardMaterial color={item.type === "mousepad-xl" ? "#14b8a6" : "#ccfbf1"} transparent opacity={0.34} roughness={0.7} />
+        <meshStandardMaterial color={item.type === "mousepad-xl" ? "#14b8a6" : "#ccfbf1"} transparent opacity={0.34} roughness={0.7} depthWrite={false} />
       </RoundedBox>
     </group>
   );
