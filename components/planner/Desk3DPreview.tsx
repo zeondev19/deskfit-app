@@ -4,7 +4,7 @@ import { useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, Grid, OrbitControls, PerspectiveCamera, RoundedBox } from "@react-three/drei";
 import { Camera, Download, Info, LocateFixed } from "lucide-react";
-import type { WebGLRenderer } from "three";
+import { DoubleSide, type WebGLRenderer } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { validateFit } from "@/lib/fitValidation";
 import { usePlannerStore } from "@/store/plannerStore";
@@ -26,11 +26,37 @@ const safeHeight = (item: DeskItem, fallback = 4) => Math.max(0.8, item.heightCm
 
 type CameraPreset = "iso" | "top" | "front" | "side";
 
-function SelectionBox({ item }: { item: DeskItem }) {
+function FootprintHighlight({ item, warning }: { item: DeskItem; warning: boolean }) {
+  const width = item.widthCm + 3;
+  const depth = item.depthCm + 3;
+  const railThickness = 0.75;
+  const railHeight = 0.22;
+  const color = warning ? "#f59e0b" : "#14b8a6";
+  const fill = warning ? "#fef3c7" : "#ccfbf1";
+
   return (
-    <RoundedBox args={[item.widthCm + 2, safeHeight(item) + 1, item.depthCm + 2]} radius={1.2} smoothness={4} position={[0, safeHeight(item) / 2 + 0.4, 0]}>
-      <meshBasicMaterial color="#14b8a6" wireframe transparent opacity={0.7} />
-    </RoundedBox>
+    <group position={[0, 0.92, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
+        <planeGeometry args={[width, depth]} />
+        <meshBasicMaterial color={fill} transparent opacity={warning ? 0.18 : 0.12} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0, -depth / 2]}>
+        <boxGeometry args={[width, railHeight, railThickness]} />
+        <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0, depth / 2]}>
+        <boxGeometry args={[width, railHeight, railThickness]} />
+        <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+      <mesh position={[-width / 2, 0, 0]}>
+        <boxGeometry args={[railThickness, railHeight, depth]} />
+        <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+      <mesh position={[width / 2, 0, 0]}>
+        <boxGeometry args={[railThickness, railHeight, depth]} />
+        <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+    </group>
   );
 }
 
@@ -300,7 +326,7 @@ function DeskItemModel({
       {item.type === "pc-case" ? <PcCaseModel item={item} /> : null}
       {item.type === "headphone-stand" ? <HeadphoneStandModel item={item} /> : null}
       {item.type === "desk-shelf" ? <DeskShelfModel item={item} /> : null}
-      {selected || warning ? <SelectionBox item={item} /> : null}
+      {selected || warning ? <FootprintHighlight item={item} warning={warning} /> : null}
     </group>
   );
 }
