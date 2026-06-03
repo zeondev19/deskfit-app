@@ -151,12 +151,15 @@ function KeyboardModel({ item }: { item: DeskItem }) {
   const keyTopY = bodyHeight + 0.28;
 
   return (
-    <group>
-      <GenericBlock item={item} color="#e5e7eb" height={bodyHeight} />
+    <group renderOrder={20}>
+      <RoundedBox args={[item.widthCm, bodyHeight, item.depthCm]} radius={Math.min(1.4, bodyHeight * 0.35, item.widthCm * 0.06)} smoothness={5} position={[0, bodyHeight / 2, 0]} castShadow receiveShadow renderOrder={20}>
+        <meshStandardMaterial color="#e5e7eb" roughness={0.5} metalness={0.04} depthTest={false} depthWrite={false} />
+      </RoundedBox>
       {Array.from({ length: rows }).map((_, row) =>
         Array.from({ length: columns }).map((__, column) => (
           <mesh
             key={`${row}-${column}`}
+            renderOrder={21}
             position={[
               -item.widthCm * 0.39 + column * keyWidth + keyWidth / 2,
               keyTopY,
@@ -164,13 +167,13 @@ function KeyboardModel({ item }: { item: DeskItem }) {
             ]}
           >
             <boxGeometry args={[keyWidth * 0.78, 0.34, keyDepth * 0.7]} />
-            <meshStandardMaterial color="#0f172a" roughness={0.48} />
+            <meshStandardMaterial color="#0f172a" roughness={0.48} depthTest={false} depthWrite={false} />
           </mesh>
         ))
       )}
-      <mesh position={[0, keyTopY + 0.04, item.depthCm * 0.3]}>
+      <mesh position={[0, keyTopY + 0.04, item.depthCm * 0.3]} renderOrder={21}>
         <boxGeometry args={[item.widthCm * 0.34, 0.3, keyDepth * 0.55]} />
-        <meshStandardMaterial color="#111827" roughness={0.52} />
+        <meshStandardMaterial color="#111827" roughness={0.52} depthTest={false} depthWrite={false} />
       </mesh>
     </group>
   );
